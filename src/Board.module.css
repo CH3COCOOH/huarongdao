@@ -1,0 +1,229 @@
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    position: relative;
+}
+
+.title {
+    font-size: 52px;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.menubtn {
+    position: relative;
+    left: 35px;
+    background-color: transparent;
+    border: 0;
+}
+
+/* 手机的侧边栏 */
+.sidebar {
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    z-index: 2;
+}
+
+.sidebarMain {
+    position: relative;
+    display: block;
+    background-color: white;
+}
+
+.sidebarOver {
+    position: relative;
+    display: block;
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.mainContent {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* 电脑的 */
+@media screen and (min-width: 520px) {
+    /* 华容道板 */
+    .board {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        display: grid;
+        width: 320px;
+        grid-template-columns: 80px 80px 80px 80px;
+        grid-template-rows: 80px 80px 80px 80px 80px;
+        background-color: transparent;
+    }
+
+    .boardImage {
+        display: block;
+        position: relative;
+        margin-bottom: 40px;
+    }
+
+    /* 状态栏 */
+    .statusBar {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 352px;
+        margin-bottom: 20px;
+    }
+
+    /* 动作栏 */
+    .actionBar {
+        display: flex;
+        flex-direction: row;
+        position: relative;
+        width: 352px;
+    }
+
+    .actionbtn {
+        background-color: transparent;
+        border: 0;
+        width: 176px;
+        height: 30px;
+    }
+
+    .actionbtn:hover {
+        cursor: pointer;
+        background-color: #bae6fd;
+    }
+}
+
+.statusText {
+    font-size: 28px;
+    color: green;
+    position: relative;
+    left: 50%;
+}
+
+/* 手机的 */
+@media screen and (max-width: 520px) {
+    /* 华容道板 */
+    .board {
+        position: absolute;
+        top: 11px;
+        left: 11px;
+        display: grid;
+        width: 220px;
+        grid-template-columns: 55px 55px 55px 55px;
+        grid-template-rows: 55px 55px 55px 55px 55px;
+        background-color: transparent;
+    }
+
+    .boardImage {
+        display: block;
+        position: relative;
+        margin-bottom: 40px;
+    }
+
+    /* 状态栏 */
+    .statusBar {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 242px;
+        margin-bottom: 20px;
+    }
+
+    /* 动作栏 */
+    .actionBar {
+        display: flex;
+        flex-direction: row;
+        position: relative;
+        width: 242px;
+    }
+
+    .actionbtn {
+        background-color: transparent;
+        border: 0;
+        width: 121px;
+        height: 30px;
+    }
+}
+
+/* 华容道板和关卡选择器容器 */
+.content {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* 关卡选择 */
+@media screen and (min-width: 520px) {
+    .selector {
+        display: grid;
+        row-gap: 15px;
+        grid-template-columns: 80px 80px 80px 80px;
+    }
+
+    .levelbtn {
+        width: 60px;
+        height: 25px;
+        border-radius: 10px;
+        border-width: 0px;
+    }
+
+    .levelbtn:hover {
+        cursor: pointer;
+        background-color: white;
+    }
+}
+
+@media screen and (max-width: 520px) {
+    .selector {
+        display: grid;
+        row-gap: 15px;
+        grid-template-columns: 50px 50px 50px 50px;
+    }
+
+    .levelbtn {
+        width: 40px;
+        height: 20px;
+        border-radius: 10px;
+        border-width: 0px;
+    }
+}
+
+.active {
+    background-color: white;
+}
+
+.inactive {
+    background-color: #f0f0f0;
+}
+
+.rightMenu {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    right: 3%;
+}
+
+
+.rightMenu h2 {
+    text-align: center;
+    margin-top: 0;
+}
+
+@media screen and (min-width: 520px) {
+    .hideLarge {
+        display: none !important;
+    }
+}
+
+@media screen and (max-width: 520px) {
+    .hideSmall {
+        display: none !important;
+    }
+}
