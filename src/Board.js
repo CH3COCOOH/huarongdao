@@ -1,6 +1,7 @@
 "use client";
 
 import { Square } from './Square.js';
+import { Selector } from './Selector.js';
 import styles from './Board.module.css';
 import { useState, useRef } from 'react';
 import { useDrop } from 'react-dnd';
@@ -72,100 +73,105 @@ export default function Board(props) {
         setShowSidebar(false);
     }
 
-    const width = isMobile ? 242 : 352;
-    const height = isMobile ? 297 : 432;
-
     return (
         <>
-            {showSidebar && <div className={styles.sidebar}>
-                <Selector name={styles.sidebarMain} select={props.select}/>
-                <div className={styles.sidebarOver} onClick={closeSide}></div>
-            </div>}
-            <div className={styles.header}>
-                <h1 className={styles.title}>华容道</h1>
-                <button className={`${styles.hideLarge} ${styles.menubtn}`} onClick={openSide}>
-                    <img
-                        src="/menu.png"
-                        alt="menu"
-                        width={30}
-                        height={30}
-                    />
-                </button>
-            </div>
-            <div className={styles.content}>
-                <div className={styles.mainContent}>
-                    <div className={styles.boardImage}>
-                        <img
-                            src="/huaboard.png"
-                            alt="huaboard"
-                            width={width}
-                            height={height}
-                        />
-                        <div ref={drop} className={styles.board}>
-                            { board }
-                        </div>
-                    </div>
-                    <div className={styles.statusBar}>
-                        <p>步数: {props.num} </p>
-                        {props.isWin && <div className={styles.statusText}>胜利</div>}
-                    </div>
-                    <div className={styles.actionBar}>
-                        <button className={styles.actionbtn} onClick={props.undo}>
-                            <img 
-                                src="/undo.svg"
-                                alt='undo'
-                                width={30}
-                                height={30}
-                            />
-                        </button>
-                        <button className={styles.actionbtn} onClick={props.restart}>
-                            <img
-                                src='restart.svg'
-                                alt='restart'
-                                width={26}
-                                height={26}
-                            />
-                        </button>
-                    </div>
-                </div>
-                <Selector select={props.select} name={`${styles.rightMenu} ${styles.hideSmall}`}/>
-            </div>
-            
+            {showSidebar && <Sidebar closeSide={closeSide} select={props.select} />}
+            <Header openSide={openSide} />
+            <Content drop={drop} board={board} isWin={props.isWin} 
+                num={props.num} undo={props.undo} restart={props.restart} 
+                select={props.select} auto={props.auto} />
         </>
     );
 }
 
-function Selector(props) {
+function Sidebar(props) {
+    return (
+        <div className={styles.sidebar}>
+            <Selector name={styles.sidebarMain} select={props.select}/>
+            <div className={styles.sidebarOver} onClick={props.closeSide} />
+        </div>
+    );
+}
 
-    const levelRef = useRef(1);
+function Header(props) {
+    return (
+        <div className={styles.header}>
+            <h1 className={styles.title}>华容道</h1>
+            <button className={`${styles.hideLarge} ${styles.menubtn}`} onClick={props.openSide}>
+                <img
+                    src="/menu.png"
+                    alt="menu"
+                    width={30}
+                    height={30}
+                />
+            </button>
+        </div>
+    );
+}
 
-    const handleClick = (id => {
-        if(id == levelRef.current) {
-            return ;
-        }
-        levelRef.current = id;
-        props.select(id);
-    });
-
-    const levelbtnarr = [];
-    for(let i = 1; i <= 6; i++) {
-        const btn = <LevelButton key={i} info={i} onClick={() => handleClick(i)}/>;
-        levelbtnarr.push(btn);
-    }
+function Content(props) {
+    const isMobile = window.innerWidth <= 520 ? true : false;
+    const width = isMobile ? 242 : 352;
+    const height = isMobile ? 297 : 432;
 
     return (
-        <>
-            <div className={props.name}>
-                <h2>关卡选择</h2>
-                <div className={styles.selector}>
-                    { levelbtnarr }
+        <div className={styles.content}>
+            <div className={styles.mainContent}>
+                <div className={styles.boardImage}>
+                    <img
+                        src="/huaboard.png"
+                        alt="huaboard"
+                        width={width}
+                        height={height}
+                    />
+                    <div ref={props.drop} className={styles.board}>
+                        { props.board }
+                    </div>
                 </div>
+                <StatusBar isWin={props.isWin} num={props.num} />
+                <ActionBar auto={props.auto} undo={props.undo} restart={props.restart} />
             </div>
-        </>
-    )
+            <Selector select={props.select} name={`${styles.rightMenu} ${styles.hideSmall}`}/>
+        </div>
+    );
 }
 
-function LevelButton({info, onClick}) {
-    return <button className={styles.levelbtn} onClick={onClick}>{info}</button>
+function ActionBar(props) {
+    return (
+        <div className={styles.actionBar}>
+            <button className={styles.actionbtn} onClick={props.undo}>
+                <img 
+                    src="/undo.svg"
+                    alt='undo'
+                    width={30}
+                    height={30}
+                />
+            </button>
+            <button className={styles.actionbtn} onClick={props.auto}>
+                <img
+                    src="/play.svg"
+                    alt='auto'
+                    width={22}
+                    height={22}
+                />
+            </button>
+            <button className={styles.actionbtn} onClick={props.restart}>
+                <img
+                    src='restart.svg'
+                    alt='restart'
+                    width={26}
+                    height={26}
+                />
+            </button>
+        </div>
+    );
 }
 
+function StatusBar(props) {
+    return (
+        <div className={styles.statusBar}>
+            <p>步数: {props.num} </p>
+            {props.isWin && <div className={styles.statusText}>胜利</div>}
+        </div>
+    );
+}

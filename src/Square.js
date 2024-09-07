@@ -2,13 +2,12 @@
 
 import styles from './Square.module.css';
 import { useDrag } from 'react-dnd';
-import { useState, useRef } from 'react';
 
 export function Square(props) {
 
-    const [col, setCol] = useState(props.col);
-    const [row, setRow] = useState(props.row);
-    const [type, setType] = useState(props.type);
+    const col = props.col;
+    const row = props.row;
+    const type = props.type;
     
     const [{isDragging}, drag, preview] = useDrag(() => ({
         type: 'move',
@@ -18,8 +17,9 @@ export function Square(props) {
         })
     }));
     
+    let result = null;
     if(type === 2)
-        var result = <button 
+        result = <button 
                         ref={drag}
                         className={styles.s}
                         style={{ 
@@ -29,7 +29,7 @@ export function Square(props) {
                     />;
 
     else if(type === 3)
-        var result = <button 
+        result = <button 
                         ref={drag}
                         className={styles.z}
                         style={{ 
@@ -39,7 +39,7 @@ export function Square(props) {
                     />;
 
     else if(type === 4)
-        var result = <button 
+        result = <button 
                         ref={drag}
                         className={styles.h}
                         style={{ 
@@ -49,7 +49,7 @@ export function Square(props) {
                     />;
 
     else if(type === 5)
-        var result = <button 
+        result = <button 
                         ref={drag}
                         className={styles.ss}
                         style={{ 
@@ -57,26 +57,6 @@ export function Square(props) {
                             gridColumn: col.toString() + ' / span 2' 
                         }}
                     />;
-
-    else
-        var result = null;
     
     return result;
-}
-
-/* 
- * type
- * 0 -> 空
- * 1 -> 占位
- * 2 -> 兵
- * 3 -> 竖
- * 4 -> 横
- * 5 -> 曹操
- */
-export class Element {
-    constructor(type, col, row) {
-        this.type=type;
-        this.col=col;
-        this.row=row;
-    }
 }

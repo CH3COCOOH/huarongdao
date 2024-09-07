@@ -15,7 +15,8 @@
     "react-dnd-touch-backend": "16.0.1",
     "react-dnd-multi-backend": "8.0.3",
     "rdndmb-html5-to-touch": "8.0.3",
-    "react-device-detect": "2.2.3"
+    "react-device-detect": "2.2.3",
+    "js-cookie": "3.0.5"
   },
   "scripts": {
     "start": "react-scripts start",

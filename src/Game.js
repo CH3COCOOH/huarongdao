@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Board from './Board.js';
-import styles from './Game.module.css';
 import load from './Level.js';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { MultiBackend } from 'react-dnd-multi-backend';
 import { HTML5toTouch } from 'rdndmb-html5-to-touch';
+import Cookies from 'js-cookie';
 
 /**
  * 0: 空
@@ -28,13 +28,18 @@ export default function Game() {
     const statusRef = useRef(false);
     const historyRef = useRef([]);
     const numStepRef = useRef(0);
+    const modeRef = useRef('manual');
 
-    analyze();
+    useEffect(() => {
+        getCookie();
+    }, []);
+
+    analyze(nextStepRef.current, layoutRef.current);
     
     function canMove(type, oldCol, oldRow, toCol, toRow) {
         const nextStep = nextStepRef.current;
         const toIndex = 4*(toRow-1)+toCol-1;
-        const step = nextStep[type.toString()+oldCol.toString()+oldRow.toString()];
+        const step = nextStep[`${type}${oldCol}${oldRow}`];
         if(step.includes(toIndex)) {
             return true;
         } else {
@@ -42,264 +47,225 @@ export default function Game() {
         }
     }
 
-    function analyze() {
-        const nextStep = nextStepRef.current;
-        const layout = layoutRef.current;
-
-        for(var key in nextStep) {
+    function analyze(nextStep, layout) {
+        for(const key in nextStep) {
             delete nextStep[key];
         }
-        for(var i = 0; i < 20; i++) {
-            const value = layout[i];
 
+        for(let i = 0; i < 20; i++) {
+            const value = layout[i];
+    
             if(value <= 1) {
                 continue;
             }
-
+    
             const col = i % 4 + 1;
             const row = (i - col + 1) / 4 + 1;
-
-            if(value == 2) {
-                var step = analyze_impl2(i);
-            } else if(value == 3) {
-                var step = analyze_impl3(i);
-            } else if(value == 4) {
-                var step = analyze_impl4(i);
-            } else if(value == 5) {
-                var step = analyze_impl5(i);
+            const step = [i];
+    
+            if(value === 2) {
+                analyze_impl2(i, layout, step);
+            } else if(value === 3) {
+                analyze_impl3(i, layout, step);
+            } else if(value === 4) {
+                analyze_impl4(i, layout, step);
+            } else if(value === 5) {
+                analyze_impl5(i, layout, step);
             }
-
-            nextStep[value.toString()+col.toString()+row.toString()] = step;
+            const delIndex = step.indexOf(i);
+            step.splice(delIndex, 1);
+    
+            nextStep[`${value}${col}${row}`] = step;
+        }
+    }
+    
+    function analyze_impl2(i, layout, step) {
+        if(!step.includes(i-1) && i % 4 !== 0 && layout[i-1] === 0) {
+            step.push(i-1);
+            analyze_impl2(i-1, layout, step);
+        }
+    
+        if(!step.includes(i-4) && i > 3 && layout[i-4] === 0) {
+            step.push(i-4);
+            analyze_impl2(i-4, layout, step);
+        }
+    
+        if(!step.includes(i+1) && i % 4 !== 3 && layout[i+1] === 0) {
+            step.push(i+1);
+            analyze_impl2(i+1, layout, step);
+        }
+    
+        if(!step.includes(i+4) && i < 16 && layout[i+4] === 0) {
+            step.push(i+4);
+            analyze_impl2(i+4, layout, step);
+        }
+    }
+    
+    function analyze_impl3(i, layout, step) {
+        if(!step.includes(i-1) && i % 4 !== 0) {
+            if(layout[i-1] === 0 && layout[i+3] === 0) {
+                step.push(i-1);
+                analyze_impl3(i-1, layout, step);
+            }
+        }
+    
+        if(!step.includes(i-4) && i > 3) {
+            if(layout[i-4] === 0) {
+                step.push(i-4);
+                analyze_impl3(i-4, layout, step);
+            }
+        }
+    
+        if(!step.includes(i+1) && i % 4 !== 3) {
+            if(layout[i+1] === 0 && layout[i+5] === 0) {
+                step.push(i+1);
+                analyze_impl3(i+1, layout, step);
+            }
+        }
+    
+        if(!step.includes(i+4) && i < 12) {
+            if(layout[i+8] === 0) {
+                step.push(i+4);
+                analyze_impl3(i+4, layout, step);
+            }
+        }
+    }
+    
+    function analyze_impl4(i, layout, step) {
+        if(!step.includes(i-1) && i % 4 !== 0) {
+            if(layout[i-1] === 0) {
+                step.push(i-1);
+                analyze_impl4(i-1, layout, step);
+            }
+        }
+    
+        if(!step.includes(i-4) && i > 3) {
+            if(layout[i-4] === 0 && layout[i-3] === 0) {
+                step.push(i-4);
+                analyze_impl4(i-4, layout, step);
+            }
+        }
+    
+        if(!step.includes(i+1) && i % 4 <= 1) {
+            if(layout[i+2] === 0) {
+                step.push(i+1);
+                analyze_impl4(i+1, layout, step);
+            }
+        }
+    
+        if(!step.includes(i+4) && i < 16) {
+            if(layout[i+4] === 0 && layout[i+5] === 0) {
+                step.push(i+4);
+                analyze_impl4(i+4, layout, step);
+            }
+        }
+    }
+    
+    function analyze_impl5(i, layout, step) {
+        if(!step.includes(i-1) && i % 4 !== 0) {
+            if(layout[i-1] === 0 && layout[i+3] === 0) {
+                step.push(i-1);
+                analyze_impl5(i-1, layout, step);
+            }
+        }
+    
+        if(!step.includes(i-4) && i > 3) {
+            if(layout[i-4] === 0 && layout[i-3] === 0) {
+                step.push(i-4);
+                analyze_impl5(i-4, layout, step);
+            }
+        }
+    
+        if(!step.includes(i+1) && i % 4 <= 1) {
+            if(layout[i+2] === 0 && layout[i+6] === 0) {
+                step.push(i+1);
+                analyze_impl5(i+1, layout, step);
+            }
+        }
+    
+        if(!step.includes(i+4) && i < 12) {
+            if(layout[i+8] === 0 && layout[i+9] === 0) {
+                step.push(i+4);
+                analyze_impl5(i+4, layout, step);
+            }
         }
     }
 
-    function analyze_impl2(i) {
-        const layout = layoutRef.current;
-        const result = [];
+    function _auto(layout) {
+        const nextStep = {}, path = {[layout]: true}, point = [layout];
+        let tmp = null;
+        while(true) {
+            tmp = point.shift();
 
-        /* 左1 */
-        if(i % 4 != 0) {
-            if(layout[i-1] == 0) {
-                result.push(i-1);
+            if(isWin(tmp)) {
+                const result = [];
+                for(; tmp !== true; tmp = path[tmp])
+                    result.push(tmp);
+                result.pop();
+                return result;
             }
-        }
 
-        /* 左2 */
-        if(i % 4 >= 2) {
-            if(layout[i-1] == 0 && layout[i-2] == 0) {
-                result.push(i-2);
-            }
-        }
+            analyze(nextStep, tmp);
+            for(const key in nextStep) {
+                const type = parseInt(key.charAt(0));
+                const oldCol = parseInt(key.charAt(1));
+                const oldRow = parseInt(key.charAt(2));
+                const indexs = nextStep[key];
+                
+                for(const index of indexs) {
+                    const toCol = index % 4 + 1;
+                    const toRow = (index - toCol + 1) / 4 + 1;
+                    const new_layout = _move(type, oldCol, oldRow, toCol, toRow, tmp);
 
-        /* 左上 */
-        if(i % 4 != 0 && i >= 4) {
-            if(layout[i-5] == 0) {
-                if(layout[i-1] == 0 || layout[i-4] == 0) {
-                    result.push(i-5);
+                    !path[new_layout] && (path[new_layout] = tmp) && point.push(new_layout);
                 }
             }
         }
-
-        /* 上1 */
-        if(i >= 4) {
-            if(layout[i-4] == 0) {
-                result.push(i-4);
-            }
-        }
-
-        /* 上2 */
-        if(i >= 8) {
-            if(layout[i-4] == 0 && layout[i-8] == 0) {
-                result.push(i-8);
-            }
-        }
-
-        /* 右上 */
-        if(i % 4 != 3 && i >= 4) {
-            if(layout[i-3] == 0) {
-                if(layout[i+1] == 0 || layout[i-4] == 0) {
-                    result.push(i-3);
-                }
-            }
-        }
-
-        /* 右1 */
-        if(i % 4 != 3) {
-            if(layout[i+1] == 0) {
-                result.push(i+1);
-            }
-        }
-
-        /* 右2 */
-        if(i % 4 <= 1) {
-            if(layout[i+1] == 0 && layout[i+2] == 0) {
-                result.push(i+2);
-            }
-        }
-
-        /* 右下 */
-        if(i % 4 != 3 && i <= 15) {
-            if(layout[i+5] == 0) {
-                if(layout[i+1] == 0 || layout[i+4] == 0) {
-                    result.push(i+5);
-                }
-            }
-        }
-
-        /* 下1 */
-        if(i <= 15) {
-            if(layout[i+4] == 0) {
-                result.push(i+4);
-            }
-        }
-
-        /* 下2 */
-        if(i <= 11) {
-            if(layout[i+4] == 0 && layout[i+8] == 0) {
-                result.push(i+8);
-            }
-        }
-
-        /* 左下 */
-        if(i % 4 != 0 && i <= 15) {
-            if(layout[i+3] == 0) {
-                if(layout[i-1] == 0 || layout[i+4] == 0) {
-                    result.push(i+3);
-                }
-            }
-        }
-
-        return result;
     }
 
-    function analyze_impl3(i) {
+    async function auto() {
+        modeRef.current = 'auto';
         const layout = layoutRef.current;
-        const result = [];
-
-        if(i % 4 != 0) {
-            if(layout[i-1] == 0 && layout[i+3] == 0) {
-                result.push(i-1);
-            }
-        }
-
-        if(i >= 4) {
-            if(layout[i-4] == 0) {
-                result.push(i-4);
-            }
-        }
-
-        if(i >= 8) {
-            if(layout[i-4] == 0 && layout[i-8] == 0) {
-                result.push(i-8);
-            }
-        }
-
-        if(i % 4 != 3) {
-            if(layout[i+1] == 0 && layout[i+5] == 0) {
-                result.push(i+1);
-            }
-        }
-
-        if(i <= 11) {
-            if(layout[i+8] == 0) {
-                result.push(i+4);
-            }
-        }
-
-        if(i <= 7) {
-            if(layout[i+8] == 0 && layout[i+12] == 0) {
-                result.push(i+8);
-            }
-        }
+        const step = _auto(layout);
         
-        return result;
-    }
-
-    function analyze_impl4(i) {
-        const layout = layoutRef.current;
-        const result = [];
-
-        if(i % 4 != 0) {
-            if(layout[i-1] == 0) {
-                result.push(i-1);
+        let new_layout = null;
+        while(modeRef.current === 'auto' && (new_layout = step.pop())) {
+            historyRef.current.push(layoutRef.current);
+            layoutRef.current = new_layout;
+            numStepRef.current++;
+            if(isWin(new_layout)) {
+                statusRef.current = true;
             }
+            setLayout(new_layout);
+            setCookie();
+            await sleep();
         }
-
-        if(i % 4 == 2) {
-            if(layout[i-1] == 0 && layout[i-2] == 0) {
-                result.push(i-2);
-            }
-        }
-
-        if(i >= 4) {
-            if(layout[i-4] == 0 && layout[i-3] == 0) {
-                result.push(i-4);
-            }
-        }
-
-        if(i % 4 != 2) {
-            if(layout[i+2] == 0) {
-                result.push(i+1);
-            }
-        }
-
-        if(i % 4 == 0) {
-            if(layout[i+2] == 0 && layout[i+3] == 0) {
-                result.push(i+2);
-            }
-        }
-
-        if(i <= 14) {
-            if(layout[i+4] == 0 && layout[i+5] == 0) {
-                result.push(i+4);
-            }
-        }
-
-        return result;
-    }
-
-    function analyze_impl5(i) {
-        const layout = layoutRef.current;
-        const result = [];
-
-        if(i % 4 != 0) {
-            if(layout[i-1] == 0 && layout[i+3] == 0) {
-                result.push(i-1);
-            }
-        }
-
-        if(i >= 4) {
-            if(layout[i-4] == 0 && layout[i-3] == 0) {
-                result.push(i-4);
-            }
-        }
-
-        if(i % 4 != 2) {
-            if(layout[i+2] == 0 && layout[i+6] == 0) {
-                result.push(i+1);
-            }
-        }
-
-        if(i <= 10) {
-            if(layout[i+8] == 0 && layout[i+9] == 0) {
-                result.push(i+4);
-            }
-        }
-
-        return result;
     }
 
     function move(type, oldCol, oldRow, toCol, toRow) {
         if(!canMove(type, oldCol, oldRow, toCol, toRow)) {
             return ;
         }
-        if(statusRef.current == true) {
+        if(statusRef.current === true) {
             return ;
         }
         
+        const new_layout = _move(type, oldCol, oldRow, toCol, toRow, layoutRef.current);
+        
+        historyRef.current.push(layoutRef.current);
+        layoutRef.current = new_layout;
+        numStepRef.current++;
+        if(isWin(new_layout)) {
+            statusRef.current = true;
+        }
+        setLayout(new_layout);
+        setCookie();
+    }
+
+    function _move(type, oldCol, oldRow, toCol, toRow, layout) {
         const old_index = (oldRow-1)*4-1+oldCol;
         const index = (toRow-1)*4-1+toCol;
-        const new_layout = layoutRef.current.slice();
+        const new_layout = layout.slice();
 
         if(type===2) {
             new_layout[old_index]=0;
@@ -327,20 +293,10 @@ export default function Game() {
             new_layout[index+4]=1;
             new_layout[index+5]=1;
         }
-
-        historyRef.current.push(layoutRef.current);
-        layoutRef.current = new_layout;
-        numStepRef.current++;
-        if(isWin()) {
-            statusRef.current = true;
-        }
-
-        setLayout(new_layout);
-        
+        return new_layout;
     }
 
-    function isWin() {
-        const layout = layoutRef.current;
+    function isWin(layout) {
         if(layout[13] === 5) {
             return true;
         } else {
@@ -349,7 +305,7 @@ export default function Game() {
     }
 
     function undo() {
-        if(statusRef.current == true) {
+        if(statusRef.current === true) {
             return ;
         }
         const history = historyRef.current;
@@ -362,6 +318,7 @@ export default function Game() {
         const new_layout = history[history.length - 1];
         layoutRef.current = new_layout;
         setLayout(new_layout);
+        setCookie();
     }
 
     function restart() {
@@ -371,6 +328,7 @@ export default function Game() {
         const new_layout = load(levelRef.current);
         layoutRef.current = new_layout;
         setLayout(new_layout);
+        setCookie();
     }
 
     function select(level) {
@@ -381,12 +339,51 @@ export default function Game() {
         const new_layout = load(level);
         layoutRef.current = new_layout;
         setLayout(new_layout);
+        setCookie();
+    }
+
+    function setCookie() {
+        Cookies.set('level', JSON.stringify(levelRef.current), { expires: 365});
+        Cookies.set('layout', JSON.stringify(layoutRef.current), { expires: 365});
+        Cookies.set('status', JSON.stringify(statusRef.current), { expires: 365});
+        Cookies.set('history', JSON.stringify(historyRef.current), { expires: 365});
+        Cookies.set('num', JSON.stringify(numStepRef.current), { expires: 365});
+    }
+
+    function getCookie() {
+        const levCookie = Cookies.get('level');
+        const lCookie = Cookies.get('layout');
+        const sCookie = Cookies.get('status');
+        const hCookie = Cookies.get('history');
+        const nCookie = Cookies.get('num');
+
+        if(levCookie !== undefined) {
+            levelRef.current = JSON.parse(levCookie);
+        }
+        if(sCookie !== undefined) {
+            statusRef.current = JSON.parse(sCookie);
+        }
+        if(hCookie !== undefined) {
+            historyRef.current = JSON.parse(hCookie);
+        }
+        if(nCookie !== undefined) {
+            numStepRef.current = JSON.parse(nCookie);
+        }
+        if(lCookie !== undefined) {
+            layoutRef.current = JSON.parse(lCookie);
+            setLayout(JSON.parse(lCookie));
+        }
     }
 
     return (
         <DndProvider backend={MultiBackend} options={HTML5toTouch}>
-            <Board layout={ layout } move={ move } undo={ undo } num={numStepRef.current}
-                restart={ restart } canMove={ canMove } select={ select } isWin={ statusRef.current }/>
+            <Board layout={layout} move={move} undo={undo} num={numStepRef.current}
+                restart={restart} canMove={canMove} select={select} 
+                isWin={statusRef.current} auto={auto} />
         </DndProvider>
     );
+}
+
+function sleep() {
+    return new Promise(resolve => setTimeout(resolve, 500));
 }
