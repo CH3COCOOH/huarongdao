@@ -4,20 +4,17 @@ import styles from './Selector.module.css';
 import { useRef } from 'react';
 
 export function Selector(props) {
-
-    const levelRef = useRef(1);
-
     const handleClick = (id => {
-        if(id == levelRef.current) {
+        if(id === props.level) {
             return ;
         }
-        levelRef.current = id;
         props.select(id);
     });
 
     const levelbtnarr = [];
     for(let i = 1; i <= 6; i++) {
-        const btn = <LevelButton key={i} info={i} onClick={() => handleClick(i)}/>;
+        const active = (i === props.level);
+        const btn = <LevelButton key={i} info={i} active={active} onClick={() => handleClick(i)}/>;
         levelbtnarr.push(btn);
     }
 
@@ -33,6 +30,8 @@ export function Selector(props) {
     )
 }
 
-function LevelButton({info, onClick}) {
-    return <button className={styles.levelbtn} onClick={onClick}>{info}</button>
+function LevelButton(props) {
+    return props.active ? 
+        <button className={`${styles.levelbtn} ${styles.active}`} onClick={props.onClick}>{props.info}</button> :
+        <button className={`${styles.levelbtn} ${styles.inactive}`} onClick={props.onClick}>{props.info}</button>
 }

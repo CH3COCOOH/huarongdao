@@ -1,13 +1,10 @@
 "use client";
 
+import styles from './Game.module.css';
 import { useState, useRef, useEffect } from 'react';
-import Board from './Board.js';
+import { Square } from './Square.js';
 import load from './Level.js';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { TouchBackend } from 'react-dnd-touch-backend';
-import { MultiBackend } from 'react-dnd-multi-backend';
-import { HTML5toTouch } from 'rdndmb-html5-to-touch';
+import { useDrop } from 'react-dnd';
 import Cookies from 'js-cookie';
 
 /**
@@ -19,16 +16,29 @@ import Cookies from 'js-cookie';
  * 5: 曹操
  */
 
-export default function Game() {
+export default function Game(props) {
 
-    const levelRef = useRef(1);
-    const [layout, setLayout] = useState(load(1));
+    const levelRef = useRef(props.level);
+    const [layout, setLayout] = useState(load(props.level));
     const layoutRef = useRef(layout);
     const nextStepRef = useRef({});
     const statusRef = useRef(false);
     const historyRef = useRef([]);
     const numStepRef = useRef(0);
-    const modeRef = useRef('manual');
+    const [mode, setMode] = useState(true);
+    const modeRef = useRef(true);
+
+    if(levelRef.current !== props.level) {
+        setMode(true);
+        modeRef.current = true;
+        levelRef.current = props.level;
+        statusRef.current = false;
+        historyRef.current = [];
+        numStepRef.current = 0;
+        layoutRef.current = load(props.level);
+        setLayout(load(props.level));
+        setCookie();
+    }
 
     useEffect(() => {
         getCookie();
@@ -224,12 +234,17 @@ export default function Game() {
     }
 
     async function auto() {
-        modeRef.current = 'auto';
+        if(statusRef.current) {
+            return ;
+        }
+        
+        setMode(false);
+        modeRef.current = false;
         const layout = layoutRef.current;
         const step = _auto(layout);
         
         let new_layout = null;
-        while(modeRef.current === 'auto' && (new_layout = step.pop())) {
+        while(modeRef.current === false && (new_layout = step.pop())) {
             historyRef.current.push(layoutRef.current);
             layoutRef.current = new_layout;
             numStepRef.current++;
@@ -240,17 +255,39 @@ export default function Game() {
             setCookie();
             await sleep();
         }
+        setMode(true);
+        modeRef.current = true;
+    }
+
+    function stop_auto() {
+        setMode(true);
+        modeRef.current = true;
     }
 
     function move(type, oldCol, oldRow, toCol, toRow) {
-        if(!canMove(type, oldCol, oldRow, toCol, toRow)) {
-            return ;
-        }
         if(statusRef.current === true) {
             return ;
         }
+
+        let resCol = null, resRow = null;
+        const rowGap = toRow - oldRow;
+        const colGap = toCol - oldCol;
+        const pairs = gen_pairs(rowGap, colGap);
+        for(let pair of pairs) {
+            const toCol = oldCol + pair[1];
+            const toRow = oldRow + pair[0];
+            if(canMove(type, oldCol, oldRow, toCol, toRow)) {
+                resCol = toCol;
+                resRow = toRow;
+                break;
+            }
+        }
+
+        if(resCol === null || resRow === null) {
+            return ;
+        }
         
-        const new_layout = _move(type, oldCol, oldRow, toCol, toRow, layoutRef.current);
+        const new_layout = _move(type, oldCol, oldRow, resCol, resRow, layoutRef.current);
         
         historyRef.current.push(layoutRef.current);
         layoutRef.current = new_layout;
@@ -260,6 +297,23 @@ export default function Game() {
         }
         setLayout(new_layout);
         setCookie();
+    }
+
+    function gen_pairs(rowGap, colGap) {
+        const result = [];
+        const gap = Math.abs(rowGap) + Math.abs(colGap);
+        const sign1 = rowGap > 0 ? 1 : -1;
+        const sign2 = colGap > 0 ? 1 : -1;
+        for(let cur = gap; cur > 0; cur--) {
+            for(let rGap = rowGap; rGap * sign1 >= 0; rGap -= sign1) {
+                const cGap = (cur - Math.abs(rGap)) * sign2;
+                if(Math.abs(cGap) > Math.abs(colGap) || cGap * sign2 < 0) {
+                    continue;
+                }
+                result.push([rGap, cGap]);
+            }
+        }
+        return result;
     }
 
     function _move(type, oldCol, oldRow, toCol, toRow, layout) {
@@ -312,6 +366,8 @@ export default function Game() {
         if(history.length === 0) {
             return ;
         }
+        setMode(true);
+        modeRef.current = true;
         numStepRef.current--;
         const new_history = history.slice(0, -1);
         historyRef.current = new_history;
@@ -322,6 +378,8 @@ export default function Game() {
     }
 
     function restart() {
+        setMode(true);
+        modeRef.current = true;
         numStepRef.current = 0;
         historyRef.current = [];
         statusRef.current = false;
@@ -331,19 +389,7 @@ export default function Game() {
         setCookie();
     }
 
-    function select(level) {
-        numStepRef.current = 0;
-        statusRef.current = false;
-        historyRef.current = [];
-        levelRef.current = level;
-        const new_layout = load(level);
-        layoutRef.current = new_layout;
-        setLayout(new_layout);
-        setCookie();
-    }
-
     function setCookie() {
-        Cookies.set('level', JSON.stringify(levelRef.current), { expires: 365});
         Cookies.set('layout', JSON.stringify(layoutRef.current), { expires: 365});
         Cookies.set('status', JSON.stringify(statusRef.current), { expires: 365});
         Cookies.set('history', JSON.stringify(historyRef.current), { expires: 365});
@@ -351,36 +397,134 @@ export default function Game() {
     }
 
     function getCookie() {
-        const levCookie = Cookies.get('level');
         const lCookie = Cookies.get('layout');
         const sCookie = Cookies.get('status');
         const hCookie = Cookies.get('history');
         const nCookie = Cookies.get('num');
 
-        if(levCookie !== undefined) {
-            levelRef.current = JSON.parse(levCookie);
-        }
-        if(sCookie !== undefined) {
-            statusRef.current = JSON.parse(sCookie);
-        }
-        if(hCookie !== undefined) {
-            historyRef.current = JSON.parse(hCookie);
-        }
-        if(nCookie !== undefined) {
-            numStepRef.current = JSON.parse(nCookie);
-        }
+        sCookie !== undefined && (statusRef.current = JSON.parse(sCookie));
+        hCookie !== undefined && (historyRef.current = JSON.parse(hCookie));
+        nCookie !== undefined && (numStepRef.current = JSON.parse(nCookie));
+        
         if(lCookie !== undefined) {
             layoutRef.current = JSON.parse(lCookie);
             setLayout(JSON.parse(lCookie));
         }
     }
 
+    function toBoard(layout) {
+        var len = 0;            // 包含的棋子数
+        const new_board = [];
+        layout.map((data, index) => {
+            if(data >= 2 && data <= 5) {
+                const col = index % 4 + 1;
+                const row = (index - col + 1) / 4 + 1;
+                const square = <Square key={`${data}${col}${row}`} type={data} col={col} row={row} />;
+                new_board[len] = square;
+                len++;
+            }
+        });
+        return new_board;
+    }
+
+    const board = toBoard(layoutRef.current);
+    const isMobile = window.innerWidth <= 520 ? true : false;
+    const width = isMobile ? 242 : 352;
+    const height = isMobile ? 297 : 432;
+
+    const [{ isOver }, drop] = useDrop(() => ({
+        accept: 'move',  
+        canDrop: () => modeRef.current,
+        drop: (item, monitor) => {
+            const oldCol = item.col;
+            const oldRow = item.row;
+            const offset = monitor.getDifferenceFromInitialOffset();
+            const toCol = location(offset.x, oldCol, 4);
+            const toRow = location(offset.y, oldRow, 5);
+            move(item.type, oldCol, oldRow, toCol, toRow);
+        },
+        collect: (monitor) => ({
+            isOver: !!monitor.isOver(),
+        }),
+    }));
+
+    function location(offset, oldValue, maxValue) {
+        const unit = isMobile ? 55 : 80;
+        var result = oldValue + Math.round(offset/unit);
+        if(result <= 0) {
+            result = 1;
+        }
+        if(result > maxValue) {
+            result = maxValue;
+        }
+        return result;
+    }
+
     return (
-        <DndProvider backend={MultiBackend} options={HTML5toTouch}>
-            <Board layout={layout} move={move} undo={undo} num={numStepRef.current}
-                restart={restart} canMove={canMove} select={select} 
-                isWin={statusRef.current} auto={auto} />
-        </DndProvider>
+        <div className={styles.mainContent}>
+            <div className={styles.boardImage}>
+                <img
+                    src="/huaboard.png"
+                    alt="huaboard"
+                    width={width}
+                    height={height}
+                />
+                <div ref={drop} className={styles.board}>
+                    { board }
+                </div>
+            </div>
+            <StatusBar isWin={statusRef.current} num={numStepRef.current} />
+            <ActionBar auto={auto} undo={undo} restart={restart} mode={modeRef.current} stop={stop_auto} />
+        </div>
+    );
+}
+
+function ActionBar(props) {
+    return (
+        <div className={styles.actionBar}>
+            <button className={styles.actionbtn} onClick={props.undo}>
+                <img 
+                    src="/undo.svg"
+                    alt='undo'
+                    width={ 30 }
+                    height={ 30 }
+                />
+            </button>
+            { props.mode === true ? 
+            <button className={styles.actionbtn} onClick={props.auto}>
+                <img
+                    src="/play.svg"
+                    alt='auto'
+                    width={ 22 }
+                    height={ 22 }
+                />
+            </button> :
+            <button className={styles.actionbtn} onClick={props.stop}>
+                <img
+                    src="/stop.svg"
+                    alt='stop'
+                    width={ 28 }
+                    height={ 28 }
+                />
+            </button> }
+            <button className={styles.actionbtn} onClick={props.restart}>
+                <img
+                    src='restart.svg'
+                    alt='restart'
+                    width={ 26 }
+                    height={ 26 }
+                />
+            </button>
+        </div>
+    );
+}
+
+function StatusBar(props) {
+    return (
+        <div className={styles.statusBar}>
+            <p>步数: {props.num} </p>
+            {props.isWin && <div className={styles.statusText}>胜利</div>}
+        </div>
     );
 }
 

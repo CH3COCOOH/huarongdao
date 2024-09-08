@@ -9,11 +9,11 @@ export default function load(level) {
         ];
     } else if(level === 2) {
         return [
-            2, 5, 1, 3,
-            2, 1, 1, 1,
-            2, 2, 4, 1,
-            3, 4, 1, 3,
-            1, 0, 0, 1
+            3, 5, 1, 3,
+            1, 1, 1, 1,
+            3, 4, 1, 2,
+            1, 4, 1, 2,
+            2, 0, 0, 2
         ];
     } else if(level === 3) {
         return [
@@ -46,6 +46,14 @@ export default function load(level) {
             1, 4, 1, 1,
             2, 4, 1, 2,
             0, 4, 1, 0
+        ];
+    } else if(level === 7) {
+        return [
+            2, 5, 1, 3,
+            2, 1, 1, 1,
+            2, 2, 4, 1,
+            3, 4, 1, 3,
+            1, 0, 0, 1
         ];
     } else {
         return null;
