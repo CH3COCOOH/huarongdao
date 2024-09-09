@@ -48,7 +48,7 @@ export default function Board(props) {
         if(lCookie !== undefined) {
             return JSON.parse(lCookie);
         } else {
-            return null;
+            return 1;
         }
     }
     
