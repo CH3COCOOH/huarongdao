@@ -55,7 +55,7 @@ export default function Board(props) {
     return (
         <>
             { showSidebar && <Sidebar closeSide={ closeSide } 
-                select={ props.select } level={ levelRef.current } /> }
+                select={ select } level={ levelRef.current } /> }
             <Header openSide={ openSide } />
             <Content select={ select } level={ levelRef.current } />
         </>
