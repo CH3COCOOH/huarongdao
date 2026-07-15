@@ -1,5 +1,5 @@
 import { GameStatusConstant } from "./constant/game_status";
-import { loadLevel } from "./level";
+import { levelMap } from "./level";
 import { Tracer } from "./tracer/tracer";
 import { SingleTracer } from "./tracer/single_tracer";
 import { Board } from "./board";
@@ -13,7 +13,7 @@ export class Game {
   private tracer: Tracer;
 
   constructor(level: number = 1) {
-    const layout = loadLevel(level);
+    const layout = levelMap.get(level);
     if (!layout) {
       throw new Error("ERROR! No such level!");
     }
