@@ -1,4 +1,5 @@
-import { useDraggable } from "@dnd-kit/react";
+import { useEffect, useRef } from "react";
+import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 
 const colorMap: Record<number, string> = {
   2: "bg-yellow-400",
@@ -8,7 +9,20 @@ const colorMap: Record<number, string> = {
 };
 
 export function Item({ index, type }: any) {
-  const { ref: dragRef } = useDraggable({ id: index });
+  const dragRef = useRef(null);
+
+  useEffect(() => {
+    const el = dragRef.current;
+    if (!el) {
+      return;
+    }
+
+    return draggable({
+      element: el,
+      getInitialData: () => ({ index }),
+    });
+  }, [index]);
+
   const h = Math.floor(index / 4) + 1;
   const w = (index % 4) + 1;
 
