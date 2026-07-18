@@ -1,5 +1,4 @@
-import { useEffect, useRef } from "react";
-import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useDraggable } from "../../components/useDraggable";
 
 const colorMap: Record<number, string> = {
   2: "bg-yellow-400",
@@ -9,19 +8,7 @@ const colorMap: Record<number, string> = {
 };
 
 export function Item({ index, type }: any) {
-  const dragRef = useRef(null);
-
-  useEffect(() => {
-    const el = dragRef.current;
-    if (!el) {
-      return;
-    }
-
-    return draggable({
-      element: el,
-      getInitialData: () => ({ index }),
-    });
-  }, [index]);
+  const { onPointerDown, setDomRef } = useDraggable(`${index}`);
 
   const h = Math.floor(index / 4) + 1;
   const w = (index % 4) + 1;
@@ -43,9 +30,10 @@ export function Item({ index, type }: any) {
   }
   return (
     <div
-      ref={dragRef}
+      ref={setDomRef}
+      onPointerDown={onPointerDown}
       style={{ gridColumn: `${w} / span ${colSpan}`, gridRow: `${h} / span ${rowSpan}` }}
-      className={`border-2 rounded-sm ${colorMap[type]}`}
+      className={`touch-none border-2 rounded-sm ${colorMap[type]}`}
     />
   );
 }

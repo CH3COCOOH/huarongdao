@@ -6,11 +6,7 @@ import { GameStatusConstant } from "../../../../backend/constant/game_status";
 import { Helper } from "./helper";
 import { Item } from "./item";
 import _ from "lodash";
-import {
-  dropTargetForElements,
-  ElementDragPayload,
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { DragLocationHistory } from "@atlaskit/pragmatic-drag-and-drop/types";
+import { DragDropContext } from "../../components/drag-drop-context";
 
 export function Board({ setIsSideOpen }: any) {
   const params = useParams();
@@ -24,24 +20,10 @@ export function Board({ setIsSideOpen }: any) {
   const [auto, setAuto] = useState(false);
   const autoRef = useRef(false);
 
-  const dropRef = useRef(null);
-
   useEffect(() => {
     gameRef.current = new Game(parseInt(params.level ?? "1"));
     update();
   }, [params.level]);
-
-  useEffect(() => {
-    const el = dropRef.current;
-    if (!el) {
-      return;
-    }
-
-    return dropTargetForElements({
-      element: el,
-      onDrop: ({ source, location }) => onDrop(source, location),
-    });
-  }, []);
 
   function update() {
     const game = gameRef.current!;
@@ -119,18 +101,18 @@ export function Board({ setIsSideOpen }: any) {
     update();
   }
 
-  function onDrop(source: ElementDragPayload, location: DragLocationHistory) {
+  function onDrop(id: string, offset: any) {
     if (autoRef.current) {
       return;
     }
     const windowWidth = window.innerWidth;
     const itemSize = windowWidth >= 1024 ? 80 : 55;
 
-    const pixelX = location.current.input.clientX - location.initial.input.clientX;
-    const pixelY = location.current.input.clientY - location.initial.input.clientY;
+    const pixelX = offset.x;
+    const pixelY = offset.y;
     const deltaX = Math.round(pixelX / itemSize);
     const deltaY = Math.round(pixelY / itemSize);
-    const srcIndex = source.data.index as number;
+    const srcIndex = parseInt(id);
 
     const srcX = srcIndex % 4;
     const srcY = Math.floor(srcIndex / 4);
@@ -169,49 +151,57 @@ export function Board({ setIsSideOpen }: any) {
   }
 
   return (
-    <div ref={dropRef} className="flex flex-col gap-6 items-center">
-      <div className="flex flex-row justify-center items-center gap-1 mt-12">
-        <Helper setIsDev={setIsDev} />
-        <h1 className="text-4xl text-gray-500">华&nbsp;&nbsp;容&nbsp;&nbsp;道</h1>
-        <img
-          className="lg:hidden"
-          src="/menu.png"
-          width={30}
-          height={30}
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsSideOpen(true);
-          }}
-        />
-        <div className="hidden lg:block w-7.5 h-7.5" />
-      </div>
-      <div className="relative">
-        <img src="/huaboard.png" className="w-60.5 lg:w-88 h-74.25 lg:h-108" />
-        <div className="absolute lg:top-4 lg:left-4 top-2.75 left-2.75 grid lg:grid-cols-[repeat(4,80px)] lg:grid-rows-[repeat(5,80px)] grid-cols-[repeat(4,55px)] grid-rows-[repeat(5,55px)]">
-          {showLayout()}
+    <DragDropContext onDrop={onDrop}>
+      <div className="flex flex-col gap-6 items-center">
+        <div className="flex flex-row justify-center items-center gap-1 mt-12">
+          <Helper setIsDev={setIsDev} />
+          <h1 className="text-4xl text-gray-500">华&nbsp;&nbsp;容&nbsp;&nbsp;道</h1>
+          <img
+            className="lg:hidden"
+            src="/menu.png"
+            width={30}
+            height={30}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsSideOpen(true);
+            }}
+          />
+          <div className="hidden lg:block w-7.5 h-7.5" />
         </div>
+        <div className="relative">
+          <img src="/huaboard.png" className="w-60.5 lg:w-88 h-74.25 lg:h-108" />
+          <div className="absolute lg:top-4 lg:left-4 top-2.75 left-2.75 grid lg:grid-cols-[repeat(4,80px)] lg:grid-rows-[repeat(5,80px)] grid-cols-[repeat(4,55px)] grid-rows-[repeat(5,55px)]">
+            {showLayout()}
+          </div>
+        </div>
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              undo();
+            }}
+            className="px-8 py-1 cursor-pointer transition-colors hover:bg-blue-100 rounded-xl active:bg-blue-200"
+          >
+            <img src="/undo.svg" width={30} height={30} className="mx-auto" />
+          </button>
+          {isDev && modeBtn}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              redo();
+            }}
+            className="px-8 py-1 cursor-pointer transition-colors hover:bg-blue-100 rounded-xl active:bg-blue-200"
+          >
+            <img src="/restart.svg" width={30} height={30} className="mx-auto" />
+          </button>
+        </div>
+        <div className="flex justify-center">
+          <p>步&nbsp;数: {moveNum}</p>
+        </div>
+        {status === GameStatusConstant.WIN && (
+          <div className="text-2xl text-center text-green-500">胜&nbsp;利</div>
+        )}
       </div>
-      <div className="flex justify-center gap-2">
-        <button
-          onClick={undo}
-          className="px-8 py-1 cursor-pointer transition-colors hover:bg-blue-100 rounded-xl active:bg-blue-200"
-        >
-          <img src="/undo.svg" width={30} height={30} className="mx-auto" />
-        </button>
-        {isDev && modeBtn}
-        <button
-          onClick={redo}
-          className="px-8 py-1 cursor-pointer transition-colors hover:bg-blue-100 rounded-xl active:bg-blue-200"
-        >
-          <img src="/restart.svg" width={30} height={30} className="mx-auto" />
-        </button>
-      </div>
-      <div className="flex justify-center">
-        <p>步&nbsp;数: {moveNum}</p>
-      </div>
-      {status === GameStatusConstant.WIN && (
-        <div className="text-2xl text-center text-green-500">胜&nbsp;利</div>
-      )}
-    </div>
+    </DragDropContext>
   );
 }
