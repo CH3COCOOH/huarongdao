@@ -1,8 +1,6 @@
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useRef } from "react";
 
 interface ActiveContextType {
-  dragId: string | null;
-  offset: { x: number; y: number };
   onDragStart: (id: string, startX: number, startY: number, dom: HTMLElement) => void;
   registerDrop: (id: string, el: HTMLElement) => void;
   removeDrop: (id: string) => void;
@@ -12,8 +10,8 @@ const ActiveContext = createContext<ActiveContextType | null>(null);
 
 export function DragDropContext({ children, onDrop }: any) {
   const dragId = useRef<string | null>(null);
-  const offset = useRef({ x: 0, y: 0 });
-  const [offsetState, setOffsetState] = useState({ x: 0, y: 0 });
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const overlayRef = useRef<HTMLElement | null>(null);
 
   const dropRefs = useRef(new Map<string, HTMLElement>());
   const startCoordsRef = useRef({ x: 0, y: 0 });
@@ -41,23 +39,26 @@ export function DragDropContext({ children, onDrop }: any) {
   };
 
   const onDragStart = useCallback(
-    (id: string, clientX: number, clientY: number, domRef: HTMLElement) => {
+    (id: string, clientX: number, clientY: number, el: HTMLElement) => {
       dragId.current = id;
       startCoordsRef.current = { x: clientX, y: clientY };
+      overlayRef.current = el;
 
       const handlePointerMove = (e: PointerEvent) => {
         const dx = e.clientX - startCoordsRef.current.x;
         const dy = e.clientY - startCoordsRef.current.y;
-        offset.current = { x: dx, y: dy };
-        setOffsetState({ x: dx, y: dy });
+        offsetRef.current = { x: dx, y: dy };
+        overlayRef.current!.style.transform = `translate(${dx}px, ${dy}px)`;
       };
 
       const handlePointerUp = (e: PointerEvent) => {
-        onDrop(dragId.current!, offset.current);
+        overlayRef.current!.style.transform = "none";
+        onDrop(dragId.current!, offsetRef.current);
 
+        overlayRef.current = null;
         dragId.current = null;
-        offset.current = { x: 0, y: 0 };
-        setOffsetState({ x: 0, y: 0 });
+        offsetRef.current = { x: 0, y: 0 };
+        startCoordsRef.current = { x: 0, y: 0 };
 
         window.removeEventListener("pointermove", handlePointerMove);
         window.removeEventListener("pointerup", handlePointerUp);
@@ -72,8 +73,6 @@ export function DragDropContext({ children, onDrop }: any) {
   return (
     <ActiveContext.Provider
       value={{
-        dragId: dragId.current,
-        offset: offset.current,
         onDragStart,
         registerDrop,
         removeDrop,

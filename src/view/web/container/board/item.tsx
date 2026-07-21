@@ -8,7 +8,7 @@ const colorMap: Record<number, string> = {
 };
 
 export function Item({ index, type }: any) {
-  const { onPointerDown, setDomRef } = useDraggable(`${index}`);
+  const { setDomRef } = useDraggable(`${index}`);
 
   const h = Math.floor(index / 4) + 1;
   const w = (index % 4) + 1;
@@ -31,7 +31,6 @@ export function Item({ index, type }: any) {
   return (
     <div
       ref={setDomRef}
-      onPointerDown={onPointerDown}
       style={{ gridColumn: `${w} / span ${colSpan}`, gridRow: `${h} / span ${rowSpan}` }}
       className={`touch-none border-2 rounded-sm ${colorMap[type]}`}
     />
